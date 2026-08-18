@@ -1,0 +1,6 @@
+# Credentials and machine-local state never belong in this repo. See README.
+*.bak-*
+auth.json
+config.toml
+agent-mail.env
+.DS_Store
