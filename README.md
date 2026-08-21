@@ -9,17 +9,30 @@ ai-skills/
   engineering-discipline/   worktree isolation, handoff continuity, audit calibration
   design-execute-audit/     design → execute → audit loop across two model tiers
   send-email/               one plain-text email, on explicit request only
-install.sh                  creates the symlinks; idempotent, backs up real files
+install.sh                  Unix/macOS: creates the symlinks; idempotent, backs up real files
+install.ps1                 Windows: same layout via directory junctions
 ```
 
 ## Install
+
+Unix / macOS:
 
 ```bash
 git clone <this-repo> ~/ai-config && ~/ai-config/install.sh
 ```
 
-Re-run it any time; existing correct symlinks are left alone and a real file in
+Windows (PowerShell):
+
+```powershell
+git clone <this-repo> $HOME\ai-config; & "$HOME\ai-config\install.ps1"
+```
+
+Re-run it any time; existing correct links are left alone and a real file in
 the way is moved to `<name>.bak-<timestamp>` rather than overwritten.
+
+After install, Cursor discovers all three skills from `~/.cursor/skills` (and
+the shared `~/.agents/skills`) in every workspace. Claude Code still uses
+`~/.claude/skills`.
 
 ## The skills
 
