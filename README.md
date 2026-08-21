@@ -1,11 +1,12 @@
 # ai-skills
 
 Three user-level skills for coding agents (Claude Code, Cursor, Codex, and
-anything else that reads a per-user skill directory), plus an idempotent
-installer that symlinks them into place.
+anything else that reads a per-user skill directory), plus always-on personal
+preferences and an idempotent installer that symlinks them into place.
 
 ```
 ai-skills/
+  user-preferences/         always-on personal workflow (language, advice, debug)
   engineering-discipline/   worktree isolation, handoff continuity, audit calibration
   design-execute-audit/     design → execute → audit loop across two model tiers
   send-email/               one plain-text email, on explicit request only
@@ -30,9 +31,19 @@ git clone <this-repo> $HOME\ai-config; & "$HOME\ai-config\install.ps1"
 Re-run it any time; existing correct links are left alone and a real file in
 the way is moved to `<name>.bak-<timestamp>` rather than overwritten.
 
-After install, Cursor discovers all three skills from `~/.cursor/skills` (and
+After install, Cursor discovers the three skills from `~/.cursor/skills` (and
 the shared `~/.agents/skills`) in every workspace. Claude Code still uses
-`~/.claude/skills`.
+`~/.claude/skills`. `user-preferences` is not a discoverable skill: Claude Code
+loads it from `~/.claude/rules/` every session. Cursor needs a single Settings
+User Rule that reads `~/.ai-skills/user-preferences/SKILL.md`.
+
+## Always-on preferences
+
+**`user-preferences`** — personal workflow that should apply in every session:
+reply in Chinese, stop when the goal is unclear, label architecture advice,
+instrument with `printf` when analysis is not enough, and suggest new rules or
+skills only after confirmation. Edit this file to change behavior in both
+Cursor and Claude Code.
 
 ## The skills
 

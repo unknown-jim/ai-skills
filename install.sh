@@ -23,10 +23,23 @@ link() {                       # link <source> <target>
 
 link "$DIR/ai-skills" "$HOME/.ai-skills"
 
+# Always-on personal preferences are Claude *rules*, not on-demand skills.
+ALWAYS_ON_RULES=(user-preferences)
+
 # Claude Code lists a skill only if it has its own symlink under ~/.claude/skills/.
 # Relative targets, so this keeps working wherever ~/.ai-skills points.
 for s in "$DIR"/ai-skills/*/; do
-  link "../../.ai-skills/$(basename "$s")" "$HOME/.claude/skills/$(basename "$s")"
+  name="$(basename "$s")"
+  skip=
+  for r in "${ALWAYS_ON_RULES[@]}"; do
+    [ "$name" = "$r" ] && { skip=1; break; }
+  done
+  [ -n "$skip" ] && continue
+  link "../../.ai-skills/$name" "$HOME/.claude/skills/$name"
+done
+
+for name in "${ALWAYS_ON_RULES[@]}"; do
+  link "../../.ai-skills/$name" "$HOME/.claude/rules/$name"
 done
 
 # Skills that every agent should discover need one symlink per tool. ~/.agents/skills

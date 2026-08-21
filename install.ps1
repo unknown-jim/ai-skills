@@ -68,9 +68,16 @@ function Link-Dir {
 
 Link-Dir (Join-Path $Dir 'ai-skills') (Join-Path $UserHome '.ai-skills')
 
+$alwaysOnRules = @('user-preferences')
+
 Get-ChildItem -LiteralPath (Join-Path $Dir 'ai-skills') -Directory | ForEach-Object {
   $name = $_.Name
+  if ($alwaysOnRules -contains $name) { return }
   Link-Dir (Join-Path $UserHome ".ai-skills\$name") (Join-Path $UserHome ".claude\skills\$name")
+}
+
+foreach ($name in $alwaysOnRules) {
+  Link-Dir (Join-Path $UserHome ".ai-skills\$name") (Join-Path $UserHome ".claude\rules\$name")
 }
 
 $crossAgentSkills = @('send-email')
