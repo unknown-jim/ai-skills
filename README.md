@@ -1,6 +1,6 @@
 # ai-skills
 
-Three user-level skills for coding agents (Claude Code, Cursor, Codex, and
+Four user-level skills for coding agents (Claude Code, Cursor, Codex, and
 anything else that reads a per-user skill directory), plus always-on personal
 preferences and an idempotent installer that symlinks them into place.
 
@@ -10,6 +10,7 @@ ai-skills/
   engineering-discipline/   worktree isolation, handoff continuity, audit calibration
   design-execute-audit/     design → execute → audit loop across two model tiers
   send-email/               one plain-text email, on explicit request only
+  glm-dispatch/             Claude Code only: mechanical execution handed to GLM
 install.sh                  Unix/macOS: creates the symlinks; idempotent, backs up real files
 install.ps1                 Windows: same layout via directory junctions
 ```
@@ -66,6 +67,15 @@ and failures go back with specific problems until they pass or hit an iteration
 cap. Includes the model mapping per harness, because copying Claude model
 aliases into another tool's slug namespace is the most common way to break it.
 
+**`glm-dispatch`** — Claude Code only. Hands the *mechanical execution* tier of
+`design-execute-audit` to a `claude` CLI pointed at Zhipu's GLM endpoint, so that
+tier bills to a third party instead of your Claude quota. Gated on a per-machine
+switch (`GLM_DISPATCH_ENABLED` in `~/.claude/glm.env`) that the skill probes
+before every dispatch: a machine that never configured it falls back to Sonnet
+silently rather than nagging you to set it up. Design and audit stay on the
+strong model — swapping the executor changes who pays, not the capability tier.
+Not linked into Cursor, which has no `claude` CLI to dispatch to.
+
 **`send-email`** — sends one plain-text email via the Resend HTTPS API, with an
 SMTP fallback. Deliberately narrow: only on an explicit request in the current
 turn, never wired to a timer, cron entry, git hook, or CI step. Credentials come
@@ -79,6 +89,15 @@ Nothing here contains credentials. `send-email` reads `RESEND_API_KEY` or SMTP
 settings from the environment or `~/.config/agent-mail.env`, which is
 intentionally not tracked. If none of its config paths are readable it writes a
 `.example` file listing the variables it needs.
+
+`glm-dispatch` reads `~/.claude/glm.env`, also untracked, holding the Zhipu
+endpoint, its API key, and the `GLM_DISPATCH_ENABLED` switch. The file's absence
+is a valid state meaning "this machine does not dispatch" — the skill probes for
+it and falls back to the normal executor rather than erroring.
+Its `setup-glm.ps1` / `setup-glm.sh` create that file from a template with the
+switch off and the key blank, install the `claude` CLI if missing, and verify the
+endpoint once you have filled the key in — they never overwrite an existing
+`glm.env`, so re-running cannot lose your key.
 
 ## Scope
 
