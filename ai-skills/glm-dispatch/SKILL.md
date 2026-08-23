@@ -68,8 +68,12 @@ macOS / Linux（参数名按 Unix 惯例，行为与上面一致）：
 - 脚本把环境变量只注入自己的子进程，MCP 用 `--strict-mcp-config` 钉死，**不碰任何全局配置**。
   绝对不要为了省事把 `ANTHROPIC_BASE_URL` 写进 `~/.claude/settings.json`——它优先级最高，
   会把这台设备上所有 Claude Code 会话（含正在派发的那个）一起切到 GLM，正好毁掉分工。
-- `-Effort` / `--effort` 默认 max。GLM 认这个参数（输出长度随档位单调递增），成本增量相对
-  固定输入开销可忽略。
+- `-Effort` / `--effort` 默认 max，**保持默认**。GLM-5.3 只有三档，Claude Code 的五档按
+  `none/minimal/low → low`、`medium/high → high`、`xhigh/max → max` 映射（智谱文档，2026-08 核实），
+  所以传 `xhigh` 和 `max` 落在同一档、没有区别。按 prompt 次数计费时 effort 不影响配额
+  （同一个请求，档位高低都算 1 次），降档只省 token 和延迟，而这两样在包月制下都不是成本；
+  反过来，更深的推理若能降低 Edit 匹配失败导致的重试，那才是真省钱——**重试才是多花一次 prompt**。
+  只有发现某类任务在 max 下反而绕远路、轮次变多时，才对那类任务传 `-Effort high`。
 - 运行日志落 `~/.claude/glm-runs/`，含 token 用量、是否报错、最终返回。用户自己在终端派发过的
   运行也在这里，orchestrator 不在场时的产出可以从这里捡回来。
 
