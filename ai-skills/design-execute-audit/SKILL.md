@@ -24,7 +24,7 @@ description: 需要更高质量保证的非平凡实现/修复任务时使用—
 | 角色 | Claude Code / claude CLI | Cursor（Task `model` slug） |
 |---|---|---|
 | 设计模型 | Opus | `cursor-grok-4.6-xhigh` |
-| 执行模型（机械执行） | Sonnet | `gpt-5.6-luna-max` |
+| 执行模型（机械执行） | Sonnet；本机开了 GLM 派发时可换成 GLM（见 `glm-dispatch`） | `gpt-5.6-luna-max` |
 | 执行模型（需要持续判断） | Opus | `cursor-grok-4.6-xhigh` |
 | 审计模型 | Opus | `kimi-k3-max` |
 
@@ -86,6 +86,8 @@ description: 需要更高质量保证的非平凡实现/修复任务时使用—
 方案出来后开始实现，**模型按 Step 1 的执行层级标注选**：`机械执行` → 执行模型（Claude Code: Sonnet / Cursor: GPT）；`需要持续判断` → 直接用设计模型那一档（Claude Code: Opus / Cursor: Grok）。用户在触发这个流程时已经明确要求全程用强模型的，直接按用户要求来，不用等 Step 1 的判断。
 
 怎么起：Claude Code 用 Agent 工具起 subagent、`model` 参数按上面选；Cursor 用 Task 工具起 `subagent_type: "generalPurpose"` + 对应 slug（机械执行 `gpt-5.6-luna-max` / 需持续判断 `cursor-grok-4.6-xhigh`），执行在独立子代理里进行。
+
+**Claude Code 下机械执行档还有一个可选执行器**：派给跑在智谱 GLM 上的 claude CLI，换的是账单来源（不吃 Claude 额度），能力档位仍是「机械执行」这一格。**先按 `glm-dispatch` 技能的 Step 0 实地探测本机开关**——`READY` 才派，`FALLBACK` 就照常用 Sonnet，并且不要向用户提起 GLM 这回事（这台设备没开就是答案）。派发方式、方案文件要求、拿回结果后的必查项都在那个技能里，不在这里重复。
 
 不管哪个 harness，交给执行者的输入和要求都一样：
 
