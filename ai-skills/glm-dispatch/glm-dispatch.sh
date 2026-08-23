@@ -97,7 +97,7 @@ WT_PATH="$(dirname "$REPO")/$(basename "$REPO")-worktrees/$WORKTREE"
 
 if [ ! -d "$WT_PATH" ]; then
   echo "[glm-dispatch] creating worktree $WT_PATH on branch $BRANCH"
-  [ "$DRYRUN" -eq 1 ] || git -C "$REPO" worktree add -b "$BRANCH" "$WT_PATH" "$BASE" >/dev/null
+  [ "$DRYRUN" -eq 1 ] || git -C "$REPO" worktree add -q -b "$BRANCH" "$WT_PATH" "$BASE"
 else
   echo "[glm-dispatch] reusing existing worktree $WT_PATH"
 fi

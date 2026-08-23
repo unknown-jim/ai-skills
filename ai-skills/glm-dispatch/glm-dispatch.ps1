@@ -80,7 +80,7 @@ $branch = if ($Branch -ne "") { $Branch } else { "glm/$Worktree" }
 
 if (-not (Test-Path $wtPath)) {
     Write-Host "[glm-dispatch] creating worktree $wtPath on branch $branch"
-    if (-not $DryRun) { git -C $Repo worktree add -b $branch $wtPath $Base | Out-Null }
+    if (-not $DryRun) { git -C $Repo worktree add -q -b $branch $wtPath $Base | Out-Null }
 } else {
     Write-Host "[glm-dispatch] reusing existing worktree $wtPath"
 }
@@ -107,13 +107,30 @@ if ($DryRun) {
 }
 
 Push-Location $wtPath
+# claude and git write progress/warnings to stderr as a matter of course (the
+# GLM model names always trip claude's unrecognized_model notice). Under
+# ErrorActionPreference='Stop', PS 5.1 promotes any native stderr line to a
+# terminating NativeCommandError *when the caller redirects stderr* (2>&1) -
+# so the script would break depending on how it was invoked. Downgrade around
+# the external call; cmdlet errors above and below still terminate.
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 try {
     Get-Content $TaskFile -Raw -Encoding UTF8 |
         & $claude -p --model $Model --effort $Effort --output-format json --dangerously-skip-permissions --mcp-config $mcpFile --strict-mcp-config |
         Tee-Object -FilePath $logFile
 } finally {
+    $ErrorActionPreference = $prevEAP
     Pop-Location
     Remove-Item $mcpFile -Force -ErrorAction SilentlyContinue   # contains the API key
+}
+
+# Tee-Object writes UTF-8 *with BOM* on PS 5.1, which makes the log fail
+# JSON.parse for anything downstream (the .sh side writes none). Strip it so
+# both platforms leave the same consumable artifact behind.
+if (Test-Path $logFile) {
+  $raw = Get-Content $logFile -Raw
+  if ($null -ne $raw) { [System.IO.File]::WriteAllText($logFile, $raw, (New-Object System.Text.UTF8Encoding($false))) }
 }
 
 $res = $null; try { $res = Get-Content $logFile -Raw | ConvertFrom-Json } catch {}
