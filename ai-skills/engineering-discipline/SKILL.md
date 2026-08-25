@@ -45,6 +45,19 @@ Adapt paths and tool names to your setup; the invariants are what matter.
 - Carry the same discipline into merge requests: put per-change evidence (gap definition, mp/upstream `file:line`, failure scenario) into the individual commit messages, which travel with the code, and say in the MR description that the full report is available on request instead of linking an in-repo path.
 - If a process document was already committed by mistake and the branch has no other consumer, drop it with `git reset --hard` plus `git push --force-with-lease` rather than adding a revert commit, then fix any MR description or comment that referenced it.
 
+### Long-Lived Plan Documents
+
+Most process documents are single-use: written once, dated, never edited (`<task>-<date>.md`). Those do not rot from accretion. The exception is the rare document that must survive the whole task chain and be **rewritten repeatedly** — a phased plan, a roadmap, a migration checklist. That one accretes until the remaining work is unfindable and every new agent burns its context reading history instead of working.
+
+- Diagnose the cause correctly: an agent appends because **deleting feels lossy and appending feels safe**. Instructing it to "stay concise" does not change that trade-off. Make deletion provably safe instead, by guaranteeing elsewhere-existence and saying where.
+- **Put a "what does not belong here, and where it lives" table at the top of the document.** This is the single highest-leverage intervention: an agent that can see that rationale lives in the review, status in `git log`, and per-round handoff in the dated files will delete from the plan. One that cannot, hoards.
+- **Do not create a "Done" / "Completed" / "Changelog" section.** It is the largest single accretion vector. Delete finished items outright rather than marking them `[x]`. Give each item a stable ID, put the ID in commit messages, and derive status with `git log --grep=<id>`. Maintained status rots; derived status cannot.
+- **State a line budget as a number** ("over 150 lines means this document is broken"). A number is enforceable; "keep it short" is not.
+- **When over budget, require a rewrite from current state, not a diff.** Rewriting forces omission; diffing only ever adds.
+- **Separate the read path from the write path.** Hand the implementing agent a scoped single-use prompt covering one phase, never the whole plan. An agent that has not read the whole plan cannot bloat the whole plan.
+- **Link, never copy.** A rationale duplicated into the plan will diverge from its source and then contradict it. One fact, one home.
+- Write these rules into the document itself, not only into the project's conventions. In-file instructions are followed far more reliably than external ones by whichever agent opens the file next.
+
 ### Audit-to-Implementation Prompt Design
 
 - Write implementation prompts as concise, task-local deltas on top of the applicable `AGENTS.md`, project rules, skills, and these user preferences. Do not copy generic workflow rules into every prompt; reference them and restate only task-specific exceptions, coordinates, or safety boundaries that the implementation agent could otherwise miss.
