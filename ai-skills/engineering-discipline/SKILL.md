@@ -22,6 +22,7 @@ Adapt paths and tool names to your setup; the invariants are what matter.
 
 ### Task Resource Reuse and Continuation
 
+- The always-on one-liner lives in `user-preferences` and any project always-on rule; this section is continuation, handoff, and concurrent-writer detail.
 - For any task that will modify code, configuration, or other project files, do not develop directly in the repository's primary checkout or on its default / protected branch. Use one isolated worktree and dedicated branch for each logical task or change stream.
 - Treat the **logical task chain**, not an individual Codex thread, Agent, or IDE session, as the worktree owner. Sequential phases such as investigation, implementation, audit, prompt-driven follow-up, test repair, and re-audit should reuse the same worktree and branch so evidence and delivery state remain continuous.
 - Treat a user request or implementation prompt as an explicit handoff when it names the exact worktree and branch, identifies the baseline or current HEAD, says the next phase should continue there, and the previous phase has stopped writing. The prompt itself may state that it constitutes the handoff; do not require a second user confirmation merely because execution moved to a new thread or Agent.
