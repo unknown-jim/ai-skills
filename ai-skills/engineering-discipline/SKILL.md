@@ -72,6 +72,14 @@ Most process documents are single-use: written once, dated, never edited (`<task
 - Consolidate report and final-response requirements. Prefer updating one stable task report with full evidence, while the final response contains only status, commit or working-tree state, validation summary, report path, and residual risk.
 - Before handing off the prompt, remove duplicated prohibitions, repeated resource paths, stale historical detail, and instructions already guaranteed by loaded rules. Confirm that an implementation agent can identify the objective, exact failure signals, permitted scope, and definition of done in one quick pass.
 
+### Orchestrator Edits Need Their Own Commit Boundary
+
+When the orchestrator fixes something itself after an implementation agent has delivered — a defect spotted while reviewing the diff, a wording correction, a small guard — commit or `git stash create` the agent's delivered state **before** touching it.
+
+The reason is auditability, not ceremony. With everything sitting uncommitted in one working tree, the auditor cannot diff "what the agent delivered" against "what the orchestrator changed on top"; it can only audit the final state and take the orchestrator's word for which part is whose. Observed 2026-09-02: the auditor's strongest available evidence was mtime distribution, which corroborated the account but proved nothing.
+
+This matters most precisely where self-review is weakest — the orchestrator's own edits are the one part of the diff that no independent party has seen before it ships. Give the auditor a boundary it can verify, and tell it explicitly which side of that boundary you wrote.
+
 ### Audit Calibration
 
 - Calibrate severity by supported-path reachability, likelihood, and user impact: reserve P1 for reproducible crashes, data loss, security issues, or core-flow failure; use P2 for real user-visible defects; treat rare timing residue, cosmetic issues, and test-only gaps as P3/follow-up.
