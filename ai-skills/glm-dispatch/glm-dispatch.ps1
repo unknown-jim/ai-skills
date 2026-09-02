@@ -113,10 +113,36 @@ Push-Location $wtPath
 # terminating NativeCommandError *when the caller redirects stderr* (2>&1) -
 # so the script would break depending on how it was invoked. Downgrade around
 # the external call; cmdlet errors above and below still terminate.
+# Point at the plan file; do NOT pipe its contents. Two reasons, both cost us a
+# whole dispatch on 2026-09-02:
+#
+# 1. Encoding. Piping a string to a native exe makes PS re-encode it, and the
+#    receiving side decoded UTF-8 as GBK - the agent got a screenful of mojibake
+#    ("## 执行坐标" arrived as "## 鎵ц鍧愭爣"). Feeding a path instead keeps this
+#    prompt pure ASCII, and the agent reads the file itself with a tool that
+#    handles UTF-8 correctly.
+# 2. Recursion. Unable to read the garbled plan, that agent recognised the word
+#    "dispatch", loaded the glm-dispatch skill from its own environment and ran
+#    THIS SCRIPT again with a TaskFile path it made up. Zero output, and a final
+#    report saying "dispatch started, GLM is working in the background" - which
+#    was literally true from its point of view. Hence the explicit "you are the
+#    executor" line below.
+if ($TaskFile -match '[^\x00-\x7F]') {
+    Write-Host "[glm-dispatch] warning: plan path contains non-ASCII characters; if the agent"
+    Write-Host "[glm-dispatch]          reports it cannot find the file, move the plan to an ASCII path."
+}
+$planPrompt = @"
+Read the plan file at $TaskFile in full, then execute it exactly as written.
+
+You are the EXECUTOR, not a dispatcher. Do NOT invoke the glm-dispatch skill.
+Do NOT hand this work to another agent or CLI. Do the work yourself, in this
+working tree, and report what you actually changed.
+"@
+
 $prevEAP = $ErrorActionPreference
 $ErrorActionPreference = 'Continue'
 try {
-    Get-Content $TaskFile -Raw -Encoding UTF8 |
+    $planPrompt |
         & $claude -p --model $Model --effort $Effort --output-format json --dangerously-skip-permissions --mcp-config $mcpFile --strict-mcp-config |
         Tee-Object -FilePath $logFile
 } finally {
