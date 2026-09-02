@@ -121,8 +121,27 @@ if [ "$DRYRUN" -eq 1 ]; then
   exit 0
 fi
 
-( cd "$WT_PATH" && claude -p --model "$MODEL" --effort "$EFFORT" --output-format json \
-    --dangerously-skip-permissions --mcp-config "$MCP_FILE" --strict-mcp-config < "$TASK" ) | tee "$LOG_FILE"
+# Point at the plan file instead of feeding its contents on stdin. `< "$TASK"`
+# was byte-exact here (unlike the PS1 side, which re-encoded and shipped
+# mojibake), but the second failure mode bit both: on 2026-09-02 a dispatched
+# agent could not read its garbled plan, recognised the word "dispatch", loaded
+# the glm-dispatch skill from its own environment and re-ran the dispatcher with
+# a made-up TaskFile. Zero output, and a report saying "dispatch started, GLM is
+# working in the background" - literally true from its point of view. Keep both
+# platforms on the same prompt so that stays fixed in one place.
+case "$TASK" in
+  *[!\ -~]*) echo "[glm-dispatch] warning: plan path contains non-ASCII characters; if the agent" ;
+             echo "[glm-dispatch]          reports it cannot find the file, move the plan to an ASCII path." ;;
+esac
+
+PROMPT="Read the plan file at $TASK in full, then execute it exactly as written.
+
+You are the EXECUTOR, not a dispatcher. Do NOT invoke the glm-dispatch skill.
+Do NOT hand this work to another agent or CLI. Do the work yourself, in this
+working tree, and report what you actually changed."
+
+( cd "$WT_PATH" && printf '%s' "$PROMPT" | claude -p --model "$MODEL" --effort "$EFFORT" --output-format json \
+    --dangerously-skip-permissions --mcp-config "$MCP_FILE" --strict-mcp-config ) | tee "$LOG_FILE"
 
 if node -e 'const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); process.exit(r.is_error?1:0)' "$LOG_FILE" 2>/dev/null; then
   echo ""
