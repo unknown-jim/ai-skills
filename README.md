@@ -1,14 +1,15 @@
 # ai-skills
 
-Four user-level skills for coding agents (Claude Code, Cursor, Codex, and
+Five user-level skills for coding agents (Claude Code, Cursor, Codex, and
 anything else that reads a per-user skill directory), plus always-on personal
 preferences and an idempotent installer that symlinks them into place.
 
 ```
 ai-skills/
   user-preferences/         always-on personal workflow (language, advice, debug)
-  engineering-discipline/   worktree isolation, handoff continuity, audit calibration
+  engineering-discipline/   worktree isolation, handoff continuity, finishing, audit calibration
   design-execute-audit/     design → execute → audit loop across two model tiers
+  writing-for-agents/       writing SKILL.md, AGENTS.md, and agent-facing prompts
   send-email/               one plain-text email, on explicit request only
   glm-dispatch/             Claude Code only: mechanical execution handed to GLM
 install.sh                  Unix/macOS: creates the symlinks; idempotent, backs up real files
@@ -41,9 +42,10 @@ User Rule that reads `~/.ai-skills/user-preferences/SKILL.md`.
 ## Always-on preferences
 
 **`user-preferences`** — personal workflow that should apply in every session:
-reply in Chinese, stop when the goal is unclear, label architecture advice,
-instrument with `printf` when analysis is not enough, and suggest new rules or
-skills only after confirmation. Edit this file to change behavior in both
+reply in Chinese, stop when the goal is unclear, isolate every change stream in
+its own worktree, refuse to call anything done without verification output from
+this turn, label architecture advice, instrument with `printf` when analysis is
+not enough, and suggest new rules or skills only after confirmation. Edit this file to change behavior in both
 Cursor and Claude Code.
 
 ## The skills
@@ -57,7 +59,9 @@ baseline HEAD is sufficient authorization to continue there. Process documents
 — they are single-use, nobody prunes them, and their conclusions decay fast
 enough that a later agent will read a stale one and go fix a bug that no longer
 exists. Also covers how to write an audit-to-implementation prompt that another
-agent can act on in one pass, and how to calibrate finding severity so P1 keeps
+agent can act on in one pass, how to close a change stream once it is green (the
+integration choice is the user's, and a refused `git worktree remove` means those
+files exist nowhere else), and how to calibrate finding severity so P1 keeps
 meaning something.
 
 **`design-execute-audit`** — for work that warrants more assurance than a single
@@ -75,6 +79,17 @@ before every dispatch: a machine that never configured it falls back to Sonnet
 silently rather than nagging you to set it up. Design and audit stay on the
 strong model — swapping the executor changes who pays, not the capability tier.
 Not linked into Cursor, which has no `claude` CLI to dispatch to.
+
+**`writing-for-agents`** — for writing anything an agent reads: a `SKILL.md`, an
+`AGENTS.md`, a project rule, a prompt handed to a subagent. Its first section is
+the one that gets used most — whether a new rule should be a skill at all, or a
+line in `user-preferences`, or a section of a skill that already exists; a rule
+that must fire every time makes a bad skill, because a skill only loads when its
+description matches. The rest covers why a description is a *pointer* whose
+wording decides whether the material is ever loaded, what to inline versus push
+behind that pointer, completion criteria sharp enough that the agent cannot
+declare itself done early, and the no-op test for pruning: if a sentence does not
+change behavior versus the model's default, delete the sentence.
 
 **`send-email`** — sends one plain-text email via the Resend HTTPS API, with an
 SMTP fallback. Deliberately narrow: only on an explicit request in the current

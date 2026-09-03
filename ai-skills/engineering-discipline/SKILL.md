@@ -1,6 +1,6 @@
 ---
 name: engineering-discipline
-description: Working discipline for agents making non-trivial code changes — isolated worktree/branch per change stream, handoff continuity across investigation → implementation → audit → re-audit, keeping process documents out of the repository, writing audit-to-implementation prompts, and calibrating audit severity. Use when starting substantial code work, handing work between agents or sessions, writing a prompt for another agent to implement or re-audit something, or deciding how severe a review finding is.
+description: Working discipline for agents making non-trivial code changes — isolated worktree/branch per change stream, handoff continuity across investigation → implementation → audit → re-audit, keeping process documents out of the repository, closing a finished change stream, writing audit-to-implementation prompts, and calibrating audit severity. Use when starting substantial code work, handing work between agents or sessions, deciding how to land or clean up a finished branch, writing a prompt for another agent to implement or re-audit something, or deciding how severe a review finding is.
 ---
 
 # Engineering Discipline
@@ -36,6 +36,22 @@ Adapt paths and tool names to your setup; the invariants are what matter.
 - Record the task scope, repository/worktree/branch, audited baseline and current HEAD, changed files, git status and diff summary, actual validation commands with exit codes and results, incomplete work, `[UNVERIFIED]` items, known risks, and any external actions taken or intentionally omitted. Do not claim an independent audit verdict such as `PASS`.
 - Treat the handoff report as an orientation index, not audit evidence. A re-auditing agent must first confirm that its recorded HEAD and working-tree state are current, then independently inspect the diff and rerun proportionate validation. If the report is stale or mismatched, update the same report after verification rather than creating another one.
 - Creating an isolated worktree, branch, directory, or report does not grant permission to push, open an MR / PR, delete an older resource, or perform any other external or destructive action unless the user explicitly requested it.
+
+### Finishing a Change Stream
+
+Closing the worktree and branch the previous section opened. The failures cluster at
+this end of the task: a suite that was green three commits ago quoted as proof of the
+tree about to be merged, a merge into the wrong base, and a `--force` that destroys the
+only copy of a file nobody committed.
+
+- Run the project's full validation on **the tree that is about to be integrated**. A green run earlier in the session only proves the tree it ran on. If it fails, stop and report; there is no integration decision to make yet.
+- Confirm the base branch before merging. When the fork point is not already stated in the prompt or the branch's upstream, ask — merging into the wrong base is expensive to undo.
+- Present the integration options and let the user choose: merge into the base locally, push and open a PR / MR, or keep the branch as-is. Do not infer the choice from apparent satisfaction with the result, and do not offer to discard the work; that path opens only when the user asks for it in so many words, and then only after listing the branch, its commits, and the worktree path that will be destroyed.
+- Merge before removing anything, and re-run validation on the merged result. A failure there leaves the branch and worktree in place while it is investigated — nothing has been pushed, so the merge is local and recoverable.
+- Keep the worktree when the work went out as a PR / MR. Review feedback gets fixed there, and the branch outlives the review.
+- Remove only worktrees this task chain created, and run the removal from outside the worktree itself. Others belong to the user or the host environment even when they look stale.
+- If `git worktree remove` is refused because of modified or untracked files, those files exist nowhere else: uncommitted notes, scratch data, a half-written report. Never `--force` on your own initiative — show that worktree's `git status --porcelain -uall` and ask whether to commit, move, or delete them.
+- The default ending is a report: branch, worktree path, and the actual validation result. Pushing, opening a PR / MR, and deleting a branch stay behind the explicit-request rule above.
 
 ### Process Documents Stay Out of the Repository
 

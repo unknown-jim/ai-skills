@@ -54,9 +54,9 @@ for name in "${CROSS_AGENT_SKILLS[@]}"; do
   done
 done
 
-# Cursor scans ~/.cursor/skills and the shared ~/.agents/skills. The two
+# Cursor scans ~/.cursor/skills and the shared ~/.agents/skills. The
 # coding-agent workflow skills belong there too; send-email is already linked.
-CURSOR_SKILLS=(engineering-discipline design-execute-audit)
+CURSOR_SKILLS=(engineering-discipline design-execute-audit writing-for-agents)
 for name in "${CURSOR_SKILLS[@]}"; do
   for d in .agents .cursor; do
     link "../../.ai-skills/$name" "$HOME/$d/skills/$name"
