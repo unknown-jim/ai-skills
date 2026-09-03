@@ -68,6 +68,11 @@ macOS / Linux（参数名按 Unix 惯例，行为与上面一致）：
 - 脚本把环境变量只注入自己的子进程，MCP 用 `--strict-mcp-config` 钉死，**不碰任何全局配置**。
   绝对不要为了省事把 `ANTHROPIC_BASE_URL` 写进 `~/.claude/settings.json`——它优先级最高，
   会把这台设备上所有 Claude Code 会话（含正在派发的那个）一起切到 GLM，正好毁掉分工。
+- **`--mcp` / `-Mcp` 接逗号分隔的多个值**（`--mcp vision,ardot`），不传就一个都不给。
+  云端四个用 `glm.env` 里的 token：`search` 联网搜索、`reader` 网页正文、`zread` 智谱文档库、
+  `vision` 图像理解。本机两个不带凭据、不出网：`wechat`（微信开发者工具，命令名写死 `wechatide`）
+  和 `ardot`（设计稿 MCP，`127.0.0.1:50501`）——**这两个要求对应的桌面端在整个派发期间开着**。
+  按任务实际需要给，不要默认全开。
 - `-Effort` / `--effort` 默认 max，**保持默认**。GLM-5.3 只有三档，Claude Code 的五档按
   `none/minimal/low → low`、`medium/high → high`、`xhigh/max → max` 映射（智谱文档，2026-08 核实），
   所以传 `xhigh` 和 `max` 落在同一档、没有区别。按 prompt 次数计费时 effort 不影响配额
