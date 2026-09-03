@@ -20,7 +20,7 @@ param(
     [ValidateSet("sonnet","haiku")][string]$Model = "sonnet",
     [ValidateSet("low","medium","high","xhigh","max")][string]$Effort = "max",
     [string]$Branch = "",
-    [ValidateSet("search","reader","zread","vision","wechat")][string[]]$Mcp = @(),
+    [ValidateSet("search","reader","zread","vision","wechat","ardot")][string[]]$Mcp = @(),
     [string]$Repo = "",
     [switch]$DryRun
 )
@@ -65,6 +65,8 @@ foreach ($m in $Mcp) {
         "zread"  { $servers["zread"]            = @{ type = "http"; url = "https://open.bigmodel.cn/api/mcp/zread/mcp";            headers = @{ Authorization = "Bearer $token" } } }
         "vision" { $servers["zai-vision"]       = @{ type = "stdio"; command = "npx.cmd"; args = @("-y", "@z_ai/mcp-server"); env = @{ Z_AI_API_KEY = $token; Z_AI_MODE = "ZHIPU" } } }
         "wechat" { $servers["wechat-devtools"]  = @{ type = "stdio"; command = "wechatide"; args = @("mcp") } }
+        # ardot: 设计稿 MCP，跑在本机 127.0.0.1，无凭据、不外传。派发期间 Ardot 桌面端必须开着。
+        "ardot"  { $servers["ardot"]            = @{ type = "http"; url = "http://127.0.0.1:50501/api/v1/mcp" } }
     }
 }
 $mcpFile = Join-Path $env:TEMP ("glm-mcp-" + [guid]::NewGuid().ToString("N") + ".json")

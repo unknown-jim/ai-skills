@@ -76,8 +76,10 @@ for m in $MCP; do
     zread)  append "$(http_server zread            https://open.bigmodel.cn/api/mcp/zread/mcp)" ;;
     vision) append "$(printf '"zai-vision":{"type":"stdio","command":"npx","args":["-y","@z_ai/mcp-server"],"env":{"Z_AI_API_KEY":"%s","Z_AI_MODE":"ZHIPU"}}' "$TOKEN")" ;;
     wechat) append '"wechat-devtools":{"type":"stdio","command":"wechatide","args":["mcp"]}' ;;
+    # ardot: 设计稿 MCP，跑在本机 127.0.0.1，无凭据、不外传。派发期间 Ardot 桌面端必须开着。
+    ardot)  append '"ardot":{"type":"http","url":"http://127.0.0.1:50501/api/v1/mcp"}' ;;
     "")     ;;
-    *)      IFS="$OLD_IFS"; die "unknown --mcp value: $m (search|reader|zread|vision|wechat)" ;;
+    *)      IFS="$OLD_IFS"; die "unknown --mcp value: $m (search|reader|zread|vision|wechat|ardot)" ;;
   esac
 done
 IFS="$OLD_IFS"
