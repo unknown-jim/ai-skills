@@ -1,6 +1,6 @@
 ---
 name: engineering-discipline
-description: Working discipline for agents making non-trivial code changes — isolated worktree/branch per change stream, handoff continuity across investigation → implementation → audit → re-audit, keeping process documents out of the repository, closing a finished change stream, recording architecture decisions, writing audit-to-implementation prompts, and calibrating audit severity. Use when starting substantial code work, handing work between agents or sessions, deciding how to land or clean up a finished branch, writing a prompt for another agent to implement or re-audit something, deciding how severe a review finding is, or acting on a review you received.
+description: Working discipline for agents making non-trivial code changes — isolated worktree/branch per change stream, handoff continuity across investigation → implementation → audit → re-audit, keeping process documents out of the repository, closing a finished change stream, leaving a commit boundary before editing an agent’s delivery yourself, recording architecture decisions, writing audit-to-implementation prompts, and calibrating audit severity. Use when starting substantial code work, handing work between agents or sessions, deciding how to land or clean up a finished branch, writing a prompt for another agent to implement or re-audit something, deciding how severe a review finding is, fixing something yourself on top of what an implementation agent delivered, or acting on a review you received.
 ---
 
 # Engineering Discipline

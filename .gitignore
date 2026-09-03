@@ -1,5 +1,6 @@
 # Credentials and machine-local state never belong in this repo. See README.
 *.bak-*
+*.bak
 auth.json
 config.toml
 agent-mail.env
