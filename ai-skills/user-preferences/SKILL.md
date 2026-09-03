@@ -1,6 +1,6 @@
 ---
 name: user-preferences
-description: Personal workflow preferences for all projects — reply in Chinese, clarify unclear goals before acting, isolate changes in a dedicated worktree, claim completion only with fresh verification output, label architecture advice with sources and failure cases, use printf logs when code analysis is not enough, and suggest new rules or skills only after confirmation. Apply at the start of every session.
+description: Personal workflow preferences for all projects — reply in Chinese, clarify unclear goals before acting, isolate changes in a dedicated worktree, keep every changed line traceable to the request, claim completion only with fresh verification output, label architecture advice with sources and failure cases, use printf logs when code analysis is not enough, and suggest new rules or skills only after confirmation. Apply at the start of every session.
 ---
 
 # User Preferences
@@ -21,6 +21,14 @@ loads it from `~/.claude/rules/` after install.
 
 写入代码、配置或其它项目文件前，为当前改动流建立独立 git worktree 和专用分支；不要在仓库主 checkout 或默认/保护分支上开发。只读调查可用主 checkout。在 Cursor 里建好 worktree 后，立刻把当前对话的 workspace 切到该目录再写文件。工作树出现非本任务的意外改动时立刻停止写入并报告。细节见 `engineering-discipline`。
 
+## 改动范围
+
+每一行改动都要能追溯到我的请求。
+
+- 不顺手“改进”相邻的代码、注释或格式；风格跟现有代码保持一致，哪怕你有更好的写法。
+- 只清理**你自己**造成的孤儿（改完之后没人用的 import、变量、函数）。发现原有的死代码，说一声，不要删。
+- 不做没要求的抽象、配置项和“以后可能用得上”的灵活性，也不为不可能发生的情况写错误处理。
+
 ## 完成声明
 
 没有在**当前这条消息里**跑过验证命令，就不要说"完成了 / 修好了 / 测试通过"。先想清楚哪条命令能证明这句话，跑完整的那条，读输出和退出码，再带着证据下结论。
@@ -31,6 +39,7 @@ loads it from `~/.claude/rules/` after install.
 | 构建通过 | 构建命令退出码 0 | lint 过了 |
 | bug 修好了 | 原始症状按复现步骤跑一遍，不再出现 | 代码已按方案改完 |
 | 子代理干完了 | 自己看 diff / `git status` 确认改动真的落地 | 子代理回复"已完成" |
+| 回归测试真的有效 | 把修复回退掉，测试变红；恢复，测试变绿 | 测试跑过一次是绿的 |
 | 需求满足了 | 逐条对照需求清单 | 测试全绿 |
 
 没有可跑的验证命令时（纯文档、纯配置），如实说明实际做了什么核对——读了哪些文件、比对了什么——不要把"我看过了"讲成"已验证"。半截验证、"应该没问题"、"看起来是对的"一律按未验证处理，直接报告当前真实状态：没验证不丢人，声称验证过了才是问题。

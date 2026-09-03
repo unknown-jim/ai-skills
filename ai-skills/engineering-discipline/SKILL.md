@@ -1,6 +1,6 @@
 ---
 name: engineering-discipline
-description: Working discipline for agents making non-trivial code changes — isolated worktree/branch per change stream, handoff continuity across investigation → implementation → audit → re-audit, keeping process documents out of the repository, closing a finished change stream, writing audit-to-implementation prompts, and calibrating audit severity. Use when starting substantial code work, handing work between agents or sessions, deciding how to land or clean up a finished branch, writing a prompt for another agent to implement or re-audit something, or deciding how severe a review finding is.
+description: Working discipline for agents making non-trivial code changes — isolated worktree/branch per change stream, handoff continuity across investigation → implementation → audit → re-audit, keeping process documents out of the repository, closing a finished change stream, recording architecture decisions, writing audit-to-implementation prompts, and calibrating audit severity. Use when starting substantial code work, handing work between agents or sessions, deciding how to land or clean up a finished branch, writing a prompt for another agent to implement or re-audit something, deciding how severe a review finding is, or acting on a review you received.
 ---
 
 # Engineering Discipline
@@ -75,6 +75,15 @@ Most process documents are single-use: written once, dated, never edited (`<task
 - **Link, never copy.** A rationale duplicated into the plan will diverge from its source and then contradict it. One fact, one home.
 - Write these rules into the document itself, not only into the project's conventions. In-file instructions are followed far more reliably than external ones by whichever agent opens the file next.
 
+### Architecture Decision Records
+
+An ADR is one committed file recording one decision: the context and constraints, the options considered, what was chosen, why, and the cost accepted. It is the durable counterpart to the process documents above — those are single-use and decay; this one stays true, because it records why a choice looked right at the time, which does not stop being a fact when the choice is later reversed.
+
+- Write one only when **all three** hold: the decision is hard to reverse, a future reader without the context would wonder why it was done this way, and it was a real trade-off with genuine alternatives. Miss any one and skip it — an ADR per decision buries the few that matter.
+- **Supersede, never edit.** A later decision gets its own ADR marking the earlier one superseded. Editing the old file destroys the only record of the reasoning that was actually in force.
+- Keep implementation detail out. If reading the code answers the question, the ADR should not repeat the answer; it exists for what the code cannot say.
+- Numbered and dated, in the repository (`docs/adr/NNNN-slug.md` unless the project says otherwise). This is the exception the previous section allows, not a loophole for parking process documents in the repo under a different name.
+
 ### Audit-to-Implementation Prompt Design
 
 - Write implementation prompts as concise, task-local deltas on top of the applicable `AGENTS.md`, project rules, skills, and these user preferences. Do not copy generic workflow rules into every prompt; reference them and restate only task-specific exceptions, coordinates, or safety boundaries that the implementation agent could otherwise miss.
@@ -102,4 +111,14 @@ This matters most precisely where self-review is weakest — the orchestrator's 
 - Block only on findings caused by the current change or directly preventing the requested behavior. Record unrelated discoveries and pre-existing debt separately; do not expand the original definition of done.
 - Treat missing tests as confidence gaps, not automatic production defects. Prefer “primary issue passes with follow-ups” once the requested behavior is fixed.
 - Match validation to risk: run focused tests per iteration, the full suite once before final delivery unless shared low-level code changed, and perturbation only for fragile high-risk invariants.
+- Treat a quietly lowered bar as a finding in its own right: new `@ts-ignore` / `eslint-disable` / `# type: ignore` suppressions, tests skipped or deleted, assertions stripped out, a threshold edited down, a stub left unimplemented. These reach green without reaching correct, and the diff is the only place they are visible.
+
+### Receiving a Review
+
+The other side of the audit loop. A finding is a claim about the codebase, not an instruction.
+
+- Verify each finding against the code before acting on it. Implementing one you have not checked copies the reviewer's mistake into the tree under your name.
+- Push back with technical reasoning when a finding is wrong here — a platform floor that rules the suggestion out, a deliberate legacy path, an endpoint nothing calls. Silently dropping it is as bad as silently implementing it: the next re-audit raises it again and no record says why it was dropped.
+- If any finding is unclear, ask before implementing **any** of them. Findings are usually related, and a partial reading produces the wrong fix for the ones you thought you understood.
+- Skip performative agreement. State the fix, ask the question, or push back; "you're absolutely right" carries no information and often precedes an unverified change.
 

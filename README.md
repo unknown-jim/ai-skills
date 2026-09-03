@@ -1,14 +1,18 @@
 # ai-skills
 
-Five user-level skills for coding agents (Claude Code, Cursor, Codex, and
+Nine user-level skills for coding agents (Claude Code, Cursor, Codex, and
 anything else that reads a per-user skill directory), plus always-on personal
 preferences and an idempotent installer that symlinks them into place.
 
 ```
 ai-skills/
-  user-preferences/         always-on personal workflow (language, advice, debug)
-  engineering-discipline/   worktree isolation, handoff continuity, finishing, audit calibration
+  user-preferences/         always-on personal workflow (language, scope, verification)
+  grilling/                 interrogate an unclear request into a shared design
   design-execute-audit/     design → execute → audit loop across two model tiers
+  test-driven-development/  red → green → refactor, and when to skip it
+  engineering-discipline/   worktree isolation, finishing, ADRs, audit calibration
+  handoff/                  compact a session into a pickup document
+  retro/                    mine a session for environment improvements
   writing-for-agents/       writing SKILL.md, AGENTS.md, and agent-facing prompts
   send-email/               one plain-text email, on explicit request only
   glm-dispatch/             Claude Code only: mechanical execution handed to GLM
@@ -33,7 +37,7 @@ git clone <this-repo> $HOME\ai-config; & "$HOME\ai-config\install.ps1"
 Re-run it any time; existing correct links are left alone and a real file in
 the way is moved to `<name>.bak-<timestamp>` rather than overwritten.
 
-After install, Cursor discovers the three skills from `~/.cursor/skills` (and
+After install, Cursor discovers the workflow skills from `~/.cursor/skills` (and
 the shared `~/.agents/skills`) in every workspace. Claude Code still uses
 `~/.claude/skills`. `user-preferences` is not a discoverable skill: Claude Code
 loads it from `~/.claude/rules/` every session. Cursor needs a single Settings
@@ -43,8 +47,8 @@ User Rule that reads `~/.ai-skills/user-preferences/SKILL.md`.
 
 **`user-preferences`** — personal workflow that should apply in every session:
 reply in Chinese, stop when the goal is unclear, isolate every change stream in
-its own worktree, refuse to call anything done without verification output from
-this turn, label architecture advice, instrument with `printf` when analysis is
+its own worktree, keep every changed line traceable to the request, refuse to
+call anything done without verification output from this turn, label architecture advice, instrument with `printf` when analysis is
 not enough, and suggest new rules or skills only after confirmation. Edit this file to change behavior in both
 Cursor and Claude Code.
 
@@ -61,8 +65,11 @@ enough that a later agent will read a stale one and go fix a bug that no longer
 exists. Also covers how to write an audit-to-implementation prompt that another
 agent can act on in one pass, how to close a change stream once it is green (the
 integration choice is the user's, and a refused `git worktree remove` means those
-files exist nowhere else), and how to calibrate finding severity so P1 keeps
-meaning something.
+files exist nowhere else), when a decision earns an ADR (hard to reverse,
+surprising without context, a real trade-off — all three or skip it), how to
+calibrate finding severity so P1 keeps meaning something, and how to receive a
+review: a finding is a claim about the codebase, so verify it before implementing
+it and push back with reasoning rather than dropping it silently.
 
 **`design-execute-audit`** — for work that warrants more assurance than a single
 pass: a strong model designs, a cheaper model executes mechanical changes
@@ -90,6 +97,35 @@ wording decides whether the material is ever loaded, what to inline versus push
 behind that pointer, completion criteria sharp enough that the agent cannot
 declare itself done early, and the no-op test for pruning: if a sentence does not
 change behavior versus the model's default, delete the sentence.
+
+**`grilling`** — the front end nothing else covered: every other skill here starts
+from a task that is already clear. It maps the open decisions as a tree and works
+the *frontier* — the questions whose prerequisites are already settled — one round
+at a time, each question carrying its recommended answer so pushing back is
+cheaper than composing one. Facts are the agent's job (dispatch a subagent rather
+than asking you what the code says); decisions are yours. It opens by stating its
+current reading and a confidence number, which is the part that makes it honest.
+
+**`test-driven-development`** — red, green, refactor, with the point kept in view:
+if you never watched the test fail, you do not know what it tests. A test that
+fails because of a typo is not red. For a bug the shape is a reproduction test
+first, and the regression test is only proven by reverting the fix and watching it
+go red again. Names its own skip conditions — no test infrastructure, throwaway
+scripts, config-only changes — because a bolted-on TDD ritual is worse than none.
+
+**`handoff`** — compacts the current session into the document the next agent
+picks up: coordinates and validation state from the `engineering-discipline`
+checklist, one imperative next step, and which skills to load first. Paths and
+hashes instead of copies of anything that already exists, so the handoff cannot
+diverge from the artifacts it points at.
+
+**`retro`** — a session postmortem aimed at the *environment*, not the output:
+missing navigation pointers, mistakes an automated check could have caught, no-op
+lines in always-on files, expensive tool calls, information the agent could not
+reach. It presents candidates ranked and stops, because turning findings into
+rules needs your confirmation. Carries one idea worth the read on its own — coding
+standards belong on the reviewer, which has a diff and no context pressure, not on
+the implementer, which has neither.
 
 **`send-email`** — sends one plain-text email via the Resend HTTPS API, with an
 SMTP fallback. Deliberately narrow: only on an explicit request in the current
