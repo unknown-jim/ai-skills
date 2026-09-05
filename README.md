@@ -1,6 +1,6 @@
 # ai-skills
 
-Nine user-level skills for coding agents (Claude Code, Cursor, Codex, and
+Ten user-level skills for coding agents (Claude Code, Cursor, Codex, and
 anything else that reads a per-user skill directory), plus always-on personal
 preferences and an idempotent installer that symlinks them into place.
 
@@ -11,6 +11,7 @@ ai-skills/
   design-execute-audit/     design → execute → audit loop across two model tiers
   test-driven-development/  red → green → refactor, and when to skip it
   engineering-discipline/   worktree isolation, finishing, ADRs, audit calibration
+  parallel-coordination/    one session coordinating several parallel worktree chips
   handoff/                  compact a session into a pickup document
   retro/                    mine a session for environment improvements
   writing-for-agents/       writing SKILL.md, AGENTS.md, and agent-facing prompts
@@ -86,6 +87,22 @@ before every dispatch: a machine that never configured it falls back to Sonnet
 silently rather than nagging you to set it up. Design and audit stay on the
 strong model — swapping the executor changes who pays, not the capability tier.
 Not linked into Cursor, which has no `claude` CLI to dispatch to.
+
+**`parallel-coordination`** — for one session coordinating several worktree
+"chips" that all deliver into a shared integration branch. Splits work along
+file/token ownership rather than surface position, so conflicts happen at the
+split line instead of inside it; the five-part handoff prompt adds a decision
+path (scope, ownership, verification criteria, and known pitfalls are covered
+by `engineering-discipline`) so a chip that cannot decide something bypasses
+the coordinator rather than stalling on it. Decisions get written into the
+shared document, not just relayed in messages — cross-session messages are
+rate-limited and arrive out of order, the document is the only thing everyone
+re-reads. The coordinator can rule on technical calls and merge order but
+cannot approve a push, open a PR, or message anyone outside the session. Use
+`engineering-discipline` for a single change stream, `design-execute-audit`
+for a straight-line design → execute → audit pass, and `handoff` to hand one
+session to the next — this only pays for itself when multiple lanes are
+landing into one branch at the same time.
 
 **`writing-for-agents`** — for writing anything an agent reads: a `SKILL.md`, an
 `AGENTS.md`, a project rule, a prompt handed to a subagent. Its first section is
