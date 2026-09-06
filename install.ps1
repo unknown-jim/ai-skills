@@ -88,7 +88,8 @@ foreach ($name in $crossAgentSkills) {
 }
 
 $cursorSkills = @('engineering-discipline', 'design-execute-audit', 'writing-for-agents',
-                  'grilling', 'handoff', 'retro', 'test-driven-development')
+                  'grilling', 'handoff', 'retro', 'test-driven-development',
+                  'parallel-coordination')
 foreach ($name in $cursorSkills) {
   foreach ($d in @('.agents', '.cursor')) {
     Link-Dir (Join-Path $UserHome ".ai-skills\$name") (Join-Path $UserHome "$d\skills\$name")
