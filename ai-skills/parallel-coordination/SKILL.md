@@ -1,6 +1,6 @@
 ---
 name: parallel-coordination
-description: 一个会话统筹、多条任务 chip 并行交付时用——切工作（按符号不按稿上位置）、给每个 chip 定质量档（复杂的那条内部再套 design-execute-audit）、写派活 prompt（所有权 / 判据 / 已知坑 / 决策路径与待决号段）、收下游的决策请求并逐条拍板、按顺序合进集成分支并逐次验证、收口时审集成分支 + 全量与 golden。含跨会话通信的硬约束（找统筹靠 list_sessions、每个用户 turn 只能发 10 条、裁决要落共享文档）和统筹的权限边界（能拍技术口径、不能批 push / MR / 装机）。触发短语：开几个 chip 并行、你负责统筹、让他们来问你、合进集成分支、多会话并行推进、统筹会话。单条变更流的 worktree / 交接 / prompt 密度见 engineering-discipline，不在这里重复。
+description: 一个会话统筹、多条任务 chip 并行交付时用——切工作（按符号不按稿上位置）、给每个 chip 定质量档（复杂的那条内部再套 design-execute-audit）、写派活 prompt（所有权 / 判据 / 已知坑 / 决策路径与待决号段）、收下游的决策请求并逐条拍板、按顺序合进集成分支并逐次验证、收口时审集成分支 + 全量与 golden。含跨会话通信的硬约束（找统筹靠各 harness 的会话列表工具、每个用户 turn 只能发 10 条、裁决要落共享文档）和统筹的权限边界（能拍技术口径、不能批 push / MR / 装机）。触发短语：开几个 chip 并行、你负责统筹、让他们来问你、合进集成分支、多会话并行推进、统筹会话。单条变更流的 worktree / 交接 / prompt 密度见 engineering-discipline，不在这里重复。
 ---
 
 # 并行统筹
@@ -72,8 +72,9 @@ description: 一个会话统筹、多条任务 chip 并行交付时用——切�
 
 **决策路径必须写全**，缺一条就会出现绕过统筹的分叉：
 
-- 统筹的**真实标题** + 找法：`list_sessions` 按标题取 sessionId，`send_message` 发。
-  `ListAgents` 只给自动代号、且不列 idle 会话，靠它找不到。
+- 统筹的**真实标题** + 找法：用**本 harness** 的会话列表工具按标题取 sessionId，再发消息
+  （两边工具名见最后一节「跨会话通信的硬约束」）。Claude 的 `ListAgents` 只给自动代号、
+  且不列 idle 会话，靠它找不到。
 - **找不到统筹时**：把决策点写进共享文档的待决清单（用分给它的号段，表行与小节两边都写），
   **按自己的判断继续**，不停下等。这是用户 2026-09-04 明确裁定的口径——「你决策不了的直接绕过」。
   另一条线曾写成「标待统筹决策并停在那儿」；两种写法里用户明确选了绕过，以后统一用它。
@@ -141,9 +142,15 @@ description: 一个会话统筹、多条任务 chip 并行交付时用——切�
 
 ## 跨会话通信的硬约束
 
-- **找统筹**：`mcp__ccd_session_mgmt__list_sessions`（有 title / cwd / isRunning）→
-  `mcp__ccd_session_mgmt__send_message`（idle 会话也收得到，排队到它下次活动）。
-- **限流**：一个用户 turn 里最多发 **10 条**跨会话消息，超了全部拒绝，直到用户在这个会话里说话。
+- **找统筹**：用**本 harness** 的会话工具，两边名字不通用——
+  - Claude Code：`mcp__ccd_session_mgmt__list_sessions`（有 title / cwd / isRunning）→
+    `mcp__ccd_session_mgmt__send_message`（idle 会话也收得到，排队到它下次活动）。
+  - Codex：`mcp__codex_app__list_threads`（有 title / cwd / status）→
+    `mcp__codex_app__send_message_to_thread`（idle 同样排队到下次活动）。
+  - **跨 harness 不互通**：Codex 的会话列表看不见 Claude 会话，反之亦然。统筹和 chip 必须
+    同 harness；跨 harness 只有共享文档一条通道、没有实时通知，不要混编。
+- **限流**：一个用户 turn 里最多发 **10 条**跨会话消息（ccd 实测值；Codex 未实测限流，
+  保守沿用同一预算），超了全部拒绝，直到用户在这个会话里说话。
   中间收到的 chip 消息和系统通知**不算**用户说话。所以：攒着批量回、裁决落文档；同一条内容送达过一次就够，
   交错了也用文档兜底而不是再发。
 - **「已通知 X」必须对应一次真实的 send 调用。** 在给用户的回复里用「问对方」的口气写一段，
