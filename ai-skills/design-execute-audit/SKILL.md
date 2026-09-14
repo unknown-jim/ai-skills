@@ -30,7 +30,7 @@ description: 需要更高质量保证的非平凡实现/修复任务时使用—
 | 角色 | Claude Code / claude CLI | Cursor（Task `model` slug） |
 |---|---|---|
 | 设计模型 | Opus | `kimi-k3-max` |
-| 执行模型（机械执行） | Sonnet；本机开了 GLM 派发时可换成 GLM（见 `glm-dispatch`） | `gpt-5.6-luna-max` |
+| 执行模型（机械执行） | Sonnet | `gpt-5.6-luna-max` |
 | 执行模型（需要持续判断） | Opus | `kimi-k3-max` |
 | 审计模型 | Opus | `claude-opus-5-thinking-max` |
 
@@ -148,8 +148,6 @@ description: 需要更高质量保证的非平凡实现/修复任务时使用—
 `直接落地` 省掉的只是执行这一次子代理调用，**不省 Step 3**——改动是设计环节自己落的，审计的独立性比平时更要紧。落地的人照样要交出那份自我报告（改了哪些文件、关键 diff 摘要、验证命令的实际输出和退出码、有没有偏离方案），它是审计的输入，不能因为「反正是自己改的」就跳过。
 
 怎么起：Claude Code 用 Agent 工具起 subagent、`model` 参数按上面选；Cursor 用 Task 工具起 `subagent_type: "generalPurpose"` + 对应 slug（机械执行 `gpt-5.6-luna-max` / 需持续判断 `kimi-k3-max`），执行在独立子代理里进行。
-
-**Claude Code 下机械执行档还有一个可选执行器**：派给跑在智谱 GLM 上的 claude CLI，换的是账单来源（不吃 Claude 额度），能力档位仍是「机械执行」这一格。**先按 `glm-dispatch` 技能的 Step 0 实地探测本机开关**——`READY` 才派，`FALLBACK` 就照常用 Sonnet，并且不要向用户提起 GLM 这回事（这台设备没开就是答案）。派发方式、方案文件要求、拿回结果后的必查项都在那个技能里，不在这里重复。
 
 不管哪个 harness，交给执行者的输入和要求都一样：
 
