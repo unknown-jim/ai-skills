@@ -5,9 +5,11 @@ description: Personal workflow preferences for all projects — reply in Chinese
 
 # User Preferences
 
-Canonical personal workflow preferences for Cursor and Claude Code. Complements
-project-level rules. Cursor loads this file via a Settings pointer; Claude Code
-loads it from `~/.claude/rules/` after install.
+Canonical personal workflow preferences for Cursor, Claude Code, Codex, and
+opencode. Complements project-level rules. Cursor loads this file via a Settings
+pointer; Claude Code loads it from `~/.claude/rules/` after install. Codex /
+opencode have no multi-file rules mechanism, so the installer concatenates this
+file into each tool's single `AGENTS.md`.
 
 ## 回复语言
 
@@ -21,7 +23,7 @@ loads it from `~/.claude/rules/` after install.
 
 ## 改动隔离
 
-写入代码、配置或其它项目文件前，为当前改动流建立独立 git worktree 和专用分支；不要在仓库主 checkout 或默认/保护分支上开发。只读调查可用主 checkout。在 Cursor 里建好 worktree 后，立刻把当前对话的 workspace 切到该目录再写文件。工作树出现非本任务的意外改动时立刻停止写入并报告。细节见 `engineering-discipline`。
+写入代码、配置或其它项目文件前，为当前改动流建立独立 git worktree 和专用分支；不要在仓库主 checkout 或默认/保护分支上开发。只读调查可用主 checkout。Claude Code / Codex 建好 worktree 后把对话 workspace 切到该目录再写。Cursor 保持当前 workspace 根不动，对 worktree 用绝对路径（见项目 `.cursor/rules/cursor-subagent-worktree.mdc`）。工作树出现非本任务的意外改动时立刻停止写入并报告。细节见 `engineering-discipline`。
 
 ## 改动范围
 
@@ -46,6 +48,16 @@ loads it from `~/.claude/rules/` after install.
 
 没有可跑的验证命令时（纯文档、纯配置），如实说明实际做了什么核对——读了哪些文件、比对了什么——不要把"我看过了"讲成"已验证"。半截验证、"应该没问题"、"看起来是对的"一律按未验证处理，直接报告当前真实状态：没验证不丢人，声称验证过了才是问题。
 
+## 回报对象
+
+收尾时先确认这活是谁派的。**派活来自另一个会话**（统筹 / 兄弟会话）时，push 之后补一次
+会话消息把结论送过去——它读不到你的终端，你在这里写得再详细都到不了它。
+
+触发条件是「**活是谁派的**」，不是「有没有决策要问」：没有分叉的完成回报同样欠它。
+派活里「有分叉来问我」和「完成后把结果报回来」是两条独立要求，前者不成立不会豁免后者。
+回报带上远端 SHA、**实际**基线、改动了哪些既有测试、以及下游验收的注意事项。
+找会话的方法见 `parallel-coordination` 最后一节。
+
 ## 技术选型与建议
 
 当回答涉及技术选型、架构决策、方案对比，或准备使用"推荐"、"最佳实践"、"通常做法"等表述时：
@@ -64,4 +76,12 @@ loads it from `~/.claude/rules/` after install.
 
 ## 沉淀规则与 skill
 
-对话中发现值得复用的项目约定、工作流或易踩的坑时，主动建议创建 rule（`.cursor/rules/`）或 skill（`.cursor/skills/`）。必须经用户确认后才创建。写之前先过 `writing-for-agents`：它管这条规则该做成独立 skill、并进本文件，还是当作现有 skill 的一节。
+用户在纠正工作方式时（慢、把本该直接做的事问回去、走了弯路），**这一回合**把教训写进拥有该流程的 skill/rule，或写进本文件。完成态是文件里的 diff。先过 `writing-for-agents`：已有 skill 同主题加一节，每次都要的进本文件，独立流程才新建。
+
+自己想加、用户没在纠正的新文件，仍然先过 `writing-for-agents` 再写；不要为了「以后可能有用」开空 skill。
+
+## 补充
+
+- 简洁但不丢证据：回答可以短，但路径、命令、测试结果这些证据不能省。
+- 本地能查到的不要问：改代码前自己查仓库、实现、验证，再总结；能靠合理努力在本地查到答案的问题不要问。用户已经在纠正流程时，直接改文件，这一步也不问。
+- 涉及日期一律用绝对日期，不用"下周四"这种相对表述。
