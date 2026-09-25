@@ -6,10 +6,13 @@ description: Personal workflow preferences for all projects — reply in Chinese
 # User Preferences
 
 Canonical personal workflow preferences for Cursor, Claude Code, Codex, and
-opencode. Complements project-level rules. Cursor loads this file via a Settings
-pointer; Claude Code loads it from `~/.claude/rules/` after install. Codex /
-opencode have no multi-file rules mechanism, so the installer concatenates this
-file into each tool's single `AGENTS.md`.
+opencode. Complements project-level rules. Claude Code loads it from
+`~/.claude/rules/` after install. Codex, opencode, ZCode and Cursor have no
+multi-file rules mechanism, so the installer concatenates this file with
+`private/workbuddyapp.md` into a single `AGENTS.md` per tool (`~/.codex/`,
+`~/.config/opencode/`, `~/.zcode/`, `~/.cursor/`). Cursor's user rules live in
+its Settings rather than on disk, so point that Settings entry at
+`~/.cursor/AGENTS.md` once per machine.
 
 ## 回复语言
 
@@ -21,9 +24,11 @@ file into each tool's single `AGENTS.md`.
 
 「移除 X」「删掉 X」这类请求，默认范围是把 X 连实现带引用一起清干净——X 已经作废时尤其如此，留一份没人引用的实现不是一种合理的中间状态。直接做，不要为「删到哪一层」开选项让我选。真正需要先确认的只有仓库外不可恢复的那部分（含密钥的本机配置、线上数据这类）。
 
+核实属实的缺陷直接进修复排期，不以「它占线上多少」为前置。线上数据只在三处有用：行为本身是设计取舍（改与不改各有代价，要看量级才判得了）、原因还没查清、以及修复效果的验收基线——验收基线与修复并行拉，不串在修复前面。（2026-09-24 连电脑接口失败率：我把全部修复挂在「等灯塔拉数」之后，被问「属实的问题不是本就该修吗」。）
+
 ## 改动隔离
 
-写入代码、配置或其它项目文件前，为当前改动流建立独立 git worktree 和专用分支；不要在仓库主 checkout 或默认/保护分支上开发。只读调查可用主 checkout。Claude Code / Codex 建好 worktree 后把对话 workspace 切到该目录再写。Cursor 保持当前 workspace 根不动，对 worktree 用绝对路径（见项目 `.cursor/rules/cursor-subagent-worktree.mdc`）。工作树出现非本任务的意外改动时立刻停止写入并报告。细节见 `engineering-discipline`。
+写入代码、配置或其它项目文件前，为当前改动流建立独立 git worktree 和专用分支；不要在仓库主 checkout 或默认/保护分支上开发。只读调查可用主 checkout。Claude Code / Codex 建好 worktree 后把对话 workspace 切到该目录再写。Cursor 保持当前 workspace 根不动，对 worktree 用绝对路径（见 Cursor 用户规则 `~/.cursor/rules/cursor-subagent-worktree.mdc`）。工作树出现非本任务的意外改动时立刻停止写入并报告。细节见 `engineering-discipline`。
 
 ## 改动范围
 
@@ -32,6 +37,22 @@ file into each tool's single `AGENTS.md`.
 - 不顺手“改进”相邻的代码、注释或格式；风格跟现有代码保持一致，哪怕你有更好的写法。
 - 只清理**你自己**造成的孤儿（改完之后没人用的 import、变量、函数）。发现原有的死代码，说一声，不要删。
 - 不做没要求的抽象、配置项和“以后可能用得上”的灵活性，也不为不可能发生的情况写错误处理。
+
+### 「留给作者跟进」要先确认作者会跟进
+
+上面几条管的是**别人没要求的**改动。**我自己在 review 里提出来的问题不在此列**——把它们标成
+「可跟进 / 留给原作者」，只有在确实存在一个会去修的人时才成立。默认不成立：原作者可能是设计师、
+可能只负责调 token、可能这条分支之后就不再碰了。查一下再决定，查不到就自己修完。
+
+尤其不要用这两条当理由：
+
+- 「没有已证实的缺陷，所以先不动」——判据是**谁会来修**，不是**今天炸没炸**。实测栽过：
+  一个被我判成「结构风险但没有实际泄漏路径」的全局闩锁，作者下一个提交顺手加了个 `mounted`
+  守卫，当场把它变成真的永久闩死（2026-09-22，MR !3387）。
+- 「会把 MR 撑大」——MR 大小是我的成本，不是用户的收益；真正的代价是没人接的债。
+
+真正该留下的只有：改了会越界的（别人模块的既有欠债）、以及结构上修不了的（比如某条断言在
+widget 测试里天然不可观测）。留下时说清是哪一类，别笼统写「可跟进」。
 
 ## 完成声明
 
@@ -51,12 +72,21 @@ file into each tool's single `AGENTS.md`.
 ## 回报对象
 
 收尾时先确认这活是谁派的。**派活来自另一个会话**（统筹 / 兄弟会话）时，push 之后补一次
-会话消息把结论送过去——它读不到你的终端，你在这里写得再详细都到不了它。
+会话消息（工具名见 `parallel-coordination` 最后一节）把结论送过去——它读不到你的终端，你在这里写得再详细都到不了它。
 
 触发条件是「**活是谁派的**」，不是「有没有决策要问」：没有分叉的完成回报同样欠它。
 派活里「有分叉来问我」和「完成后把结果报回来」是两条独立要求，前者不成立不会豁免后者。
 回报带上远端 SHA、**实际**基线、改动了哪些既有测试、以及下游验收的注意事项。
-找会话的方法见 `parallel-coordination` 最后一节。
+找会话的方法和几次实发见项目记忆 `coordinator-not-the-conversation-user`。
+
+## 文档分读者
+
+给对方确认的清单只放**对方要答的东西**。我们自己的落地细节——从源码查到的当前值、
+常量名、改完的后果、已经由我们定下的默认——另开一份实现侧文件，不要混进去。混进去
+对方就得在一堆不用看的内容里挑自己那几条，清单不再是清单。
+
+每写一段问一句「这段是要对方回答的吗」。不是，就挪走。已经答复、已经定下的条目从
+清单里**移出去**，不要留在原位充数——下一版清单应该比上一版短。
 
 ## 技术选型与建议
 
@@ -74,6 +104,50 @@ file into each tool's single `AGENTS.md`.
 - 沿调用链在关键节点加日志，确保能从日志还原执行路径和数据流
 - 完成后用表格汇总日志点，问题解决后**必须清理所有调试日志**
 
+### 一轮补齐，不要挤牙膏
+
+取一次日志的代价是「构建 + 我复现 + 导出」，比多打二十个字段贵得多。所以补观测时**按链路补齐，
+不按当前假设补**：
+
+- 把整条链路的判别量一次性列全——包括**你当前的假设用不到、但假设被推翻时立刻需要**的那些。
+  你的假设有很大概率是错的（前几轮就是这么过来的），日志要能同时支持证实和证伪。
+- 每个「合取条件为假」的判定点，把**各分量分别打出来**，不要只打合取结果。只打结果的话，
+  下一轮还得回来问「到底哪一格假的」。
+- 除了各环节「想做什么」，必须有一条**最终结果**的读数（帧末实际值 / 落库值 / 用户看到的那个量）。
+  只记录各方的意图而不记录谁最后赢了，是这类观测最常见的缺口。
+- 补完自问一句：**这一份日志能不能同时判别我列出的全部候选？**答不上来就再补，别急着出包。
+
+### 按「层」补齐，不按「嫌疑人」补齐
+
+「一轮补齐」还不够——补满一层照样要重来。2026-09-22 那个 bug 取了 7 次日志，拆开看只有约 3 次
+是「字段在代码里、我没打出来」（纯浪费），另外 4 次是**在错误的层加日志**，以及**那个量当时还不存在、
+得先造量具**。多打字段救不了后两类。
+
+- 先写出症状**穿过哪几层**（例：数据合并 → 布局 → 滚动 → 绘制），**每层至少一条最终结果读数**，
+  **包括你确信无辜的那些层**。
+- ⚠️ **补日志之前，先 grep 别的层现在已经在打什么。** 上面那次，定案证据是合并层的
+  `orderedTurns=`——它**本来就在 master 上、七轮里一直在打印**，只是我没去读那一层的日志。
+  我在滚动层深挖了五轮、加了四轮字段，而答案一直躺在同一份 xlog 里。
+  ⇒ 「日志不够」是最舒服的归因，但先要排除「**日志够，我没看**」。每轮取到 artifact 先按
+  **层**过一遍现有日志，再决定补什么。
+- 判据：**这份日志能不能否定我自己的假设并指向别的层？** 只能证实不能证伪的日志，在你假设错时
+  等于零。最后打开局面的那条读数恰恰是「补偿差恒等于 0」——它证明我盯了五轮的那一层是对的。
+- 「没有可观察面」不是理由，是**下一步**：先造量具（包一层 observer、挂 post-frame 拿帧末真值），
+  再取数。打不出没测量过的东西。
+
+### 让取日志不需要重新构建
+
+贵的不是写日志行，是**每加一个字段就要重新构建 + 复现 + 导出**（本仓 iOS profile ≈ 150s + 装机
+1 分钟，再加我复现）。所以观测代码的正确形态是**常驻 + 运行时开关**，不是「临时加上、定位完删掉」：
+
+- 找仓库里现成的运行时开关（WorkBuddyApp 是 `frameDiagnosticsNotifier` /
+  `kFrameDiagnosticsEnabled`，默认关、关时开销≈一次 `if`、切换即时生效不重启、**不走编译期剥离**，
+  所以 profile / release 包里也能现场拨开）。**参数求值也要在开关之内**，不是只把打印语句包起来。
+- 定位完**先考虑留下并挂开关**，再考虑删。删掉等于把这次的成本一次性消耗掉；留下则下一个同类
+  bug 的**第一份** artifact 就够用。
+- 要留就付全价：写明 owner、撤除判据，以及它突破了哪条既有约束（例：文件行数硬限）。
+  没有 owner 和撤除判据的"临时观测"会永久留在那里。
+
 ## 沉淀规则与 skill
 
 用户在纠正工作方式时（慢、把本该直接做的事问回去、走了弯路），**这一回合**把教训写进拥有该流程的 skill/rule，或写进本文件。完成态是文件里的 diff。先过 `writing-for-agents`：已有 skill 同主题加一节，每次都要的进本文件，独立流程才新建。
@@ -85,3 +159,8 @@ file into each tool's single `AGENTS.md`.
 - 简洁但不丢证据：回答可以短，但路径、命令、测试结果这些证据不能省。
 - 本地能查到的不要问：改代码前自己查仓库、实现、验证，再总结；能靠合理努力在本地查到答案的问题不要问。用户已经在纠正流程时，直接改文件，这一步也不问。
 - 涉及日期一律用绝对日期，不用"下周四"这种相对表述。
+
+WorkBuddyApp / 工蜂相关的固定上下文是另一份同级常驻规则，见
+`~/ai-config/private/workbuddyapp.md`（不在 ai-config-public 里）。在 Claude 的
+独立 rules 加载路径或拼接式 AGENTS.md 中，它会作为常驻内容出现；涉及
+WorkBuddyApp、工蜂、git.woa.com 或开 MR 时必须先按该文件读取本地配置和共享记忆。
