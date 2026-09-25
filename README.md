@@ -85,8 +85,8 @@ split line instead of inside it; the five-part handoff prompt adds a decision
 path (scope, ownership, verification criteria, and known pitfalls are covered
 by `engineering-discipline`) so a chip that cannot decide something bypasses
 the coordinator rather than stalling on it. Decisions get written into the
-shared document, not just relayed in messages — cross-session messages are
-rate-limited and arrive out of order, the document is the only thing everyone
+shared document, not just relayed in messages — cross-session messages
+arrive out of order, the document is the only thing everyone
 re-reads. The coordinator can rule on technical calls and merge order but
 cannot approve a push, open a PR, or message anyone outside the session. Use
 `engineering-discipline` for a single change stream, `design-execute-audit`
