@@ -1,6 +1,6 @@
 # ai-skills
 
-Nine user-level skills for coding agents (Claude Code, Cursor, Codex, and
+Ten user-level skills for coding agents (Claude Code, Cursor, Codex, and
 anything else that reads a per-user skill directory), plus always-on personal
 preferences and an idempotent installer that symlinks them into place.
 
@@ -10,6 +10,7 @@ ai-skills/
   grilling/                 interrogate an unclear request into a shared design
   design-execute-audit/     design → execute → audit loop across two model tiers
   test-driven-development/  red → green → refactor, and when to skip it
+  debug-observability/      add logs in one pass per layer; keep probes behind a runtime switch
   engineering-discipline/   worktree isolation, finishing, ADRs, audit calibration
   parallel-coordination/    one session coordinating several parallel worktree chips
   handoff/                  compact a session into a pickup document
@@ -49,7 +50,7 @@ User Rule that reads `~/.ai-skills/user-preferences/SKILL.md`.
 reply in Chinese, stop when the goal is unclear, isolate every change stream in
 its own worktree, keep every changed line traceable to the request, refuse to
 call anything done without verification output from this turn, label architecture advice, instrument with `printf` when analysis is
-not enough, and suggest new rules or skills only after confirmation. Edit this file to change behavior in both
+not enough, and write the lesson from a correction into the owning skill in the same turn. Edit this file to change behavior in both
 Cursor and Claude Code.
 
 ## The skills
@@ -74,17 +75,20 @@ it and push back with reasoning rather than dropping it silently.
 **`design-execute-audit`** — for work that warrants more assurance than a single
 pass: a strong model designs, a cheaper model executes mechanical changes
 (escalating back when the work needs sustained judgment), a strong model audits,
-and failures go back with specific problems until they pass or hit an iteration
-cap. Includes the model mapping per harness, because copying Claude model
+and failures go back with specific problems until they pass. There is no default
+round cap: the loop stops when a disagreement is yours to decide, or when the same
+kind of failure comes back a second time, and then proposes a structural fix.
+Includes the model mapping per harness, because copying Claude model
 aliases into another tool's slug namespace is the most common way to break it.
 
 **`parallel-coordination`** — for one session coordinating several worktree
 "chips" that all deliver into a shared integration branch. Splits work along
 file/token ownership rather than surface position, so conflicts happen at the
-split line instead of inside it; the five-part handoff prompt adds a decision
-path (scope, ownership, verification criteria, and known pitfalls are covered
-by `engineering-discipline`) so a chip that cannot decide something bypasses
-the coordinator rather than stalling on it. Decisions get written into the
+split line instead of inside it; the dispatch template (in `references/`)
+spells out ownership, verification criteria, premises with their sources, and a
+decision path, so a chip that cannot decide something bypasses the coordinator
+rather than stalling on it, except at a `design-execute-audit` stop point, where
+it reports and waits. Decisions get written into the
 shared document, not just relayed in messages — cross-session messages
 arrive out of order, the document is the only thing everyone
 re-reads. The coordinator can rule on technical calls and merge order but
@@ -120,6 +124,16 @@ first, and the regression test is only proven by reverting the fix and watching 
 go red again. Names its own skip conditions — no test infrastructure, throwaway
 scripts, config-only changes — because a bolted-on TDD ritual is worse than none.
 
+**`debug-observability`** — for when reading the code cannot locate a bug and the
+next step is adding logs or asking you to reproduce it on your device. Each round
+of logs costs a build, a reproduction, and an export, so it adds every
+discriminating value along the chain in one round — including the ones that would
+disprove the current hypothesis — and at least one final-result reading for every
+layer the symptom crosses, after first reading what those layers already print.
+Probes worth keeping stay in the code behind a runtime switch instead of being
+deleted after the fix. `user-preferences` keeps only when to add logs and who
+reproduces; this skill is how.
+
 **`handoff`** — compacts the current session into the document the next agent
 picks up: coordinates and validation state from the `engineering-discipline`
 checklist, one imperative next step, and which skills to load first. Paths and
@@ -130,7 +144,9 @@ diverge from the artifacts it points at.
 missing navigation pointers, mistakes an automated check could have caught, no-op
 lines in always-on files, expensive tool calls, information the agent could not
 reach. It presents candidates ranked and stops, because turning findings into
-rules needs your confirmation. Carries one idea worth the read on its own — coding
+rules needs your confirmation; only your own corrections and rules that already
+caused a failure are written into the owning file in the same turn. Carries one
+idea worth the read on its own — coding
 standards belong on the reviewer, which has a diff and no context pressure, not on
 the implementer, which has neither.
 

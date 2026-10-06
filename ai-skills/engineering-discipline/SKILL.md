@@ -1,6 +1,6 @@
 ---
 name: engineering-discipline
-description: Working discipline for agents making non-trivial code changes — isolated worktree/branch per change stream, handoff continuity across investigation → implementation → audit → re-audit, keeping process documents out of the repository, closing a finished change stream, leaving a commit boundary before editing an agent’s delivery yourself, recording architecture decisions, writing audit-to-implementation prompts, and calibrating audit severity. Use when starting substantial code work, handing work between agents or sessions, deciding how to land or clean up a finished branch, writing a prompt for another agent to implement or re-audit something, deciding how severe a review finding is, fixing something yourself on top of what an implementation agent delivered, or acting on a review you received.
+description: Working discipline for agents making non-trivial code changes — isolated worktree/branch per change stream, handoff continuity across investigation → implementation → audit → re-audit, keeping process documents out of the repository, closing a finished change stream, leaving a commit boundary before editing an agent’s delivery yourself, recording architecture decisions, writing audit-to-implementation prompts, calibrating audit severity, and following an upstream or reference repository. Use when starting substantial code work, tracking or comparing against another repository's changes, handing work between agents or sessions, deciding how to land or clean up a finished branch, writing a prompt for another agent to implement or re-audit something, deciding how severe a review finding is, fixing something yourself on top of what an implementation agent delivered, or acting on a review you received.
 ---
 
 # Engineering Discipline
@@ -19,6 +19,8 @@ Adapt paths and tool names to your setup; the invariants are what matter.
 - Prefer evidence-backed debugging: logs, xlog, tests, git history, commit hashes, and exact file paths.
 - Do not overwrite user changes. Check git status and work with the current dirty tree.
 - Keep durable memory only for findings that will affect future decisions; do not preserve temporary guesses.
+- A verified defect outside the current scope gets its own task right away — the harness's task-spawning tool where there is one, otherwise a ready-to-paste task prompt — and the report points at that task. Pre-existing dead code is only reported, per the user's scope rules.
+- A turn that ends on a plan ("once X finishes I will…") either finishes the work or arms whatever will wake you: a background task that notifies on exit, a monitor, a scheduled wake-up. With nothing armed, the work stops at that sentence.
 
 ### Task Resource Reuse and Continuation
 
@@ -35,7 +37,7 @@ Adapt paths and tool names to your setup; the invariants are what matter.
 - When implementation will be continued or re-audited in another task or agent context, maintain exactly one canonical handoff report. Reuse an existing audit or delivery report when available; otherwise create one at a stable, explicitly reported path outside tracked source. Start it before implementation and update it throughout the task so interrupted work remains recoverable.
 - Record the task scope, repository/worktree/branch, audited baseline and current HEAD, changed files, git status and diff summary, actual validation commands with exit codes and results, incomplete work, `[UNVERIFIED]` items, known risks, and any external actions taken or intentionally omitted. Do not claim an independent audit verdict such as `PASS`.
 - Treat the handoff report as an orientation index, not audit evidence. A re-auditing agent must first confirm that its recorded HEAD and working-tree state are current, then independently inspect the diff and rerun proportionate validation. If the report is stale or mismatched, update the same report after verification rather than creating another one.
-- Creating an isolated worktree, branch, directory, or report does not grant permission to push, open an MR / PR, delete an older resource, or perform any other external or destructive action unless the user explicitly requested it.
+- Creating an isolated worktree, branch, directory, or report does not grant permission to push, open an MR / PR, delete an older resource, or perform any other external or destructive action. That permission comes from the user: an explicit request, or the standing authorization their always-on preferences define (for this user, `user-preferences`「对外动作」).
 
 ### Finishing a Change Stream
 
@@ -44,14 +46,23 @@ this end of the task: a suite that was green three commits ago quoted as proof o
 tree about to be merged, a merge into the wrong base, and a `--force` that destroys the
 only copy of a file nobody committed.
 
-- Run the project's full validation on **the tree that is about to be integrated**. A green run earlier in the session only proves the tree it ran on. If it fails, stop and report; there is no integration decision to make yet.
+- Run the project's own integration gate — the checks its commit / MR rules require — on **the tree that is about to be integrated**. Where the project's MR CI runs the tests, that means the static and format checks locally and CI for the tests, and the report says "tests pending CI" until CI answers. A green run earlier in the session only proves the tree it ran on. If it fails, stop and report; there is no integration decision to make yet.
+- Before pushing to an open PR / MR, merge the latest base into the branch (merge rather than rebase unless the project says otherwise, so audited commits keep their SHAs) and run the gate on the merged tree. A build for the user's own testing is not a delivery claim: it goes out first and runs in parallel with the gate. Report conflicts in another author's code instead of resolving their side by guesswork.
 - Confirm the base branch before merging. When the fork point is not already stated in the prompt or the branch's upstream, ask — merging into the wrong base is expensive to undo.
-- Present the integration options and let the user choose: merge into the base locally, push and open a PR / MR, or keep the branch as-is. Do not infer the choice from apparent satisfaction with the result, and do not offer to discard the work; that path opens only when the user asks for it in so many words, and then only after listing the branch, its commits, and the worktree path that will be destroyed.
+- When neither the request nor the user's standing authorization already says how this stream lands, present the integration options and let the user choose: merge into the base locally, push and open a PR / MR, or keep the branch as-is. Do not infer the choice from apparent satisfaction with the result, and do not offer to discard the work; that path opens only when the user asks for it in so many words, and then only after listing the branch, its commits, and the worktree path that will be destroyed.
 - Merge before removing anything, and re-run validation on the merged result. A failure there leaves the branch and worktree in place while it is investigated — nothing has been pushed, so the merge is local and recoverable.
 - Keep the worktree when the work went out as a PR / MR. Review feedback gets fixed there, and the branch outlives the review.
 - Remove only worktrees this task chain created, and run the removal from outside the worktree itself. Others belong to the user or the host environment even when they look stale.
 - If `git worktree remove` is refused because of modified or untracked files, those files exist nowhere else: uncommitted notes, scratch data, a half-written report. Never `--force` on your own initiative — show that worktree's `git status --porcelain -uall` and ask whether to commit, move, or delete them.
-- The default ending is a report: branch, worktree path, and the actual validation result. Pushing, opening a PR / MR, and deleting a branch stay behind the explicit-request rule above.
+- The ending is a report whose first line is the push state: branch, worktree path, what was pushed or opened (or why it stayed local), and the actual validation result. Pushing, opening a PR / MR, and deleting a branch follow the permission rule in the previous section.
+
+### Following an Upstream or Reference Repository
+
+When a change tracks another repository — an upstream SDK, a peer client, a reference demo:
+
+- Fetch, then name the ref you read (branch + SHA) in the conclusion. A stale local checkout reads exactly like "upstream does not support it".
+- When the answer depends on what a shipped peer does, read the release branch that matches the peer's version as well as the main line, and say which one each finding comes from.
+- List the whole change surface since the last sync (`git log --stat <last>..<ref>` over the paths you consume, plus their demos and samples) before deciding what to follow, and judge by reading the diffs, not the commit titles.
 
 ### Process Documents Stay Out of the Repository
 
@@ -60,7 +71,7 @@ only copy of a file nobody committed.
 - What may be committed: code, tests, project rules and skills, long-lived specifications and design documents, and postmortems. When in doubt, keep it out.
 - **If a document genuinely needs to be committed, ask for approval before committing it.** State what the file is, why it belongs in the repository rather than the handoff directory, and where it will live. Do not commit first and offer to remove it afterwards.
 - Carry the same discipline into merge requests: put per-change evidence (gap definition, mp/upstream `file:line`, failure scenario) into the individual commit messages, which travel with the code, and say in the MR description that the full report is available on request instead of linking an in-repo path.
-- If a process document was already committed by mistake and the branch has no other consumer, drop it with `git reset --hard` plus `git push --force-with-lease` rather than adding a revert commit, then fix any MR description or comment that referenced it.
+- If a process document was already committed by mistake and the branch has no other consumer, drop it with `git reset --hard` rather than adding a revert commit, then fix any MR description or comment that referenced it. If the commit was already pushed, the force push (`--force-with-lease`) needs the user's go-ahead first.
 
 ### Long-Lived Plan Documents
 
@@ -107,10 +118,11 @@ This matters most precisely where self-review is weakest — the orchestrator's 
 
 ### Audit Calibration
 
-- Calibrate severity by supported-path reachability, likelihood, and user impact: reserve P1 for reproducible crashes, data loss, security issues, or core-flow failure; use P2 for real user-visible defects; treat rare timing residue, cosmetic issues, and test-only gaps as P3/follow-up.
+- Calibrate severity by supported-path reachability, likelihood, and user impact: reserve P1 for reproducible crashes, data loss, security issues, or core-flow failure; use P2 for real user-visible defects; treat rare timing residue, cosmetic issues, and test-only gaps as P3.
 - Block only on findings caused by the current change or directly preventing the requested behavior. Record unrelated discoveries and pre-existing debt separately; do not expand the original definition of done.
-- Treat missing tests as confidence gaps, not automatic production defects. Prefer “primary issue passes with follow-ups” once the requested behavior is fixed.
-- Match validation to risk: run focused tests per iteration, the full suite once before final delivery unless shared low-level code changed, and perturbation only for fragile high-risk invariants.
+- Treat missing tests as confidence gaps, not automatic production defects.
+- Severity decides what blocks the verdict, not what gets fixed. Verified defects and side effects introduced by this change are fixed in the same stream after the verdict; a finding becomes a follow-up only when it lies outside the stream's ownership or cannot be fixed here structurally — say which, and name who will pick it up.
+- Match validation to risk: focused tests per iteration, the project's integration gate before delivery (see Finishing a Change Stream), and perturbation only for fragile high-risk invariants.
 - Treat a quietly lowered bar as a finding in its own right: new `@ts-ignore` / `eslint-disable` / `# type: ignore` suppressions, tests skipped or deleted, assertions stripped out, a threshold edited down, a stub left unimplemented. These reach green without reaching correct, and the diff is the only place they are visible.
 
 ### Receiving a Review
