@@ -36,7 +36,7 @@ git clone <this-repo> $HOME\ai-config; & "$HOME\ai-config\install.ps1"
 ```
 
 Re-run it any time; existing correct links are left alone and a real file in
-the way is moved to `<name>.bak-<timestamp>` rather than overwritten.
+the way is moved to `<name>.bak-<timestamp>` rather than overwritten. The installer also writes the public preferences to the global `AGENTS.md` for Codex, opencode, ZCode, and Cursor; existing different files are backed up.
 
 After install, Cursor discovers the workflow skills from `~/.cursor/skills` (and
 the shared `~/.agents/skills`) in every workspace. Claude Code still uses

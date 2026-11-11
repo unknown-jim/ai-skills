@@ -47,7 +47,7 @@ tree about to be merged, a merge into the wrong base, and a `--force` that destr
 only copy of a file nobody committed.
 
 - Run the project's own integration gate — the checks its commit / MR rules require — on **the tree that is about to be integrated**. Where the project's MR CI runs the tests, that means the static and format checks locally and CI for the tests, and the report says "tests pending CI" until CI answers. A green run earlier in the session only proves the tree it ran on. If it fails, stop and report; there is no integration decision to make yet.
-- Before pushing to an open PR / MR, merge the latest base into the branch (merge rather than rebase unless the project says otherwise, so audited commits keep their SHAs) and run the gate on the merged tree. A build for the user's own testing is not a delivery claim: it goes out first and runs in parallel with the gate. Report conflicts in another author's code instead of resolving their side by guesswork.
+- 在最终集成开始时 fetch 一次目标分支，记录 SHA 并同步到任务分支，再审计和运行门禁；进入下述「交付基线冻结」后不反复追 tip。已对外的分支用 merge 保留提交，不自行 rebase。用户验收包优先构建，可与门禁并行；别人的代码发生语义冲突时带证据报告，不猜着覆盖。
 - Confirm the base branch before merging. When the fork point is not already stated in the prompt or the branch's upstream, ask — merging into the wrong base is expensive to undo.
 - When neither the request nor the user's standing authorization already says how this stream lands, present the integration options and let the user choose: merge into the base locally, push and open a PR / MR, or keep the branch as-is. Do not infer the choice from apparent satisfaction with the result, and do not offer to discard the work; that path opens only when the user asks for it in so many words, and then only after listing the branch, its commits, and the worktree path that will be destroyed.
 - Merge before removing anything, and re-run validation on the merged result. A failure there leaves the branch and worktree in place while it is investigated — nothing has been pushed, so the merge is local and recoverable.
@@ -55,6 +55,12 @@ only copy of a file nobody committed.
 - Remove only worktrees this task chain created, and run the removal from outside the worktree itself. Others belong to the user or the host environment even when they look stale.
 - If `git worktree remove` is refused because of modified or untracked files, those files exist nowhere else: uncommitted notes, scratch data, a half-written report. Never `--force` on your own initiative — show that worktree's `git status --porcelain -uall` and ask whether to commit, move, or delete them.
 - The ending is a report whose first line is the push state: branch, worktree path, what was pushed or opened (or why it stayed local), and the actual validation result. Pushing, opening a PR / MR, and deleting a branch follow the permission rule in the previous section.
+
+### 交付基线冻结
+
+- 最终集成完成后，冻结任务 HEAD 与目标分支 SHA，审计、门禁和制品都绑定这组坐标。目标分支继续收到提交，本身不使现有审计失效，也不阻止 push 或创建 PR / MR。
+- 对外前检查当前 PR / MR 的可合并状态。仅当出现实际冲突、发现影响本任务行为或依赖的具体变更、CI 明确要求分支最新，或用户明确要求再次同步时，才重开集成；记录触发原因，按影响面补验证。
+- 无关且无冲突的目标分支更新交给正常合并流程。不要把「再 fetch → 再 merge → 再审计 → 再跑门禁」变成无限交付前置；合并 PR / MR 的用户授权要求仍然保留。
 
 ### Following an Upstream or Reference Repository
 

@@ -8,8 +8,8 @@ description: Personal workflow preferences for all projects — reply in Chinese
 Canonical personal workflow preferences for Cursor, Claude Code, Codex, and
 opencode. Complements project-level rules. Claude Code loads it from
 `~/.claude/rules/` after install. Codex, opencode, ZCode and Cursor have no
-multi-file rules mechanism, so the installer concatenates this file with
-the private always-on rules (not published) into a single `AGENTS.md` per tool (`~/.codex/`,
+multi-file rules mechanism, so the public installer writes this file as a
+single `AGENTS.md` per tool (`~/.codex/`,
 `~/.config/opencode/`, `~/.zcode/`, `~/.cursor/`). Cursor's user rules live in
 its Settings rather than on disk, so point that Settings entry at
 `~/.cursor/AGENTS.md` once per machine.
@@ -17,6 +17,10 @@ its Settings rather than on disk, so point that Settings entry at
 ## 回复语言
 
 用中文回复。工具调用之间的进度说明、派给子代理的 prompt、交付文档同样用中文；代码、命令和专有名词保留原文。
+
+## 浏览器
+
+优先在内置浏览器后台处理网页，避免打断用户正在使用的 Chrome。遇到登录页，先请用户在当前浏览器协助登录，待用户确认后复查并继续。内置浏览器因网络或功能限制无法完成时，再考虑复用本机 Chrome。用户点名浏览器时按其要求。
 
 ## 目标与路径
 
@@ -92,6 +96,8 @@ widget 测试里天然不可观测）。留下时说清是哪一类，别笼统�
 | 门禁通过 | 从项目 CI 配置现取的检查清单，在要推的那份提交上逐项的退出码 | 自定义的「N 道门禁」、旧树上的读数 |
 
 诊断结论同样讲读数：没有读数时第一句就说没有，接着说去取什么；下结论前做一次基数检验（若这是常态，线上早该大面积出问题吗）；凭推断得出的前提，不拿去提单、发消息、改别人的配置。
+
+目标分支持续有更新时，按 `engineering-discipline`「交付基线冻结」收口：无关且无冲突的更新不重开审计，不无限推迟交付。
 
 **审计通过后按项目自己的提交 / MR 门禁验证**：先读项目规则里提交与 MR 那一节，照它跑。项目让 MR 的 CI 跑测试的，本地只跑门禁规定的静态与格式检查，
 干净后按授权口径对外（见「对外动作」）；完成声明写成「本地静态 / 格式检查通过，测试待 CI」，CI 结果出来前不说「测试通过」。

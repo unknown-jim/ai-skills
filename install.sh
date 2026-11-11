@@ -21,6 +21,34 @@ link() {                       # link <source> <target>
   echo "link  $dst -> $src"
 }
 
+write_agents() {             # write_agents <目标路径>
+  local dst="$1" tmp bak
+  mkdir -p "$(dirname "$dst")"
+  tmp="$(mktemp "$dst.generated.XXXXXX")"
+  {
+    cat "$DIR/ai-skills/user-preferences/SKILL.md"
+  } >"$tmp"
+  chmod 600 "$tmp"
+
+  if [ ! -L "$dst" ] && [ -f "$dst" ] && cmp -s "$dst" "$tmp"; then
+    chmod 600 "$dst"
+    rm "$tmp"
+    echo "ok   $dst"
+    return
+  fi
+
+  if [ -L "$dst" ]; then
+    rm "$dst"                 # 旧版安装留下的软链，无需保留副本
+  elif [ -e "$dst" ]; then
+    bak="$dst.bak-$(date +%Y%m%d%H%M%S)"
+    mv "$dst" "$bak"
+    echo "备份 $dst -> $bak"
+  fi
+  mv "$tmp" "$dst"
+  echo "生成 $dst"
+}
+
+
 link "$DIR/ai-skills" "$HOME/.ai-skills"
 
 # Always-on personal preferences are Claude *rules*, not on-demand skills.
@@ -63,6 +91,10 @@ for name in "${CURSOR_SKILLS[@]}"; do
   for d in .agents .cursor; do
     link "../../.ai-skills/$name" "$HOME/$d/skills/$name"
   done
+done
+
+for dst in "$HOME/.codex/AGENTS.md" "$HOME/.config/opencode/AGENTS.md" "$HOME/.zcode/AGENTS.md" "$HOME/.cursor/AGENTS.md"; do
+  write_agents "$dst"
 done
 
 echo

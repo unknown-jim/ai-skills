@@ -66,6 +66,53 @@ function Link-Dir {
   Write-Output "link  $Dst -> $srcFull"
 }
 
+function Write-GeneratedFile {
+  param([string]$Dst, [string]$Content)
+  $dstDir = Split-Path -Parent $Dst
+  if (-not (Test-Path -LiteralPath $dstDir)) {
+    New-Item -ItemType Directory -Path $dstDir | Out-Null
+  }
+
+  if (Test-Path -LiteralPath $Dst) {
+    $item = Get-Item -LiteralPath $Dst -Force
+    $needsBackup = $false
+    if ($item.PSIsContainer -and $item.LinkType -in @('Junction', 'SymbolicLink')) {
+      Remove-ReparsePoint $Dst
+    } elseif ($item.LinkType) {
+      Remove-Item -LiteralPath $Dst
+    } elseif (-not $item.PSIsContainer) {
+      $current = [System.IO.File]::ReadAllText($Dst)
+      if ($current -ceq $Content) {
+        Write-Output "ok    $Dst"
+        return
+      }
+      $needsBackup = $true
+    } else {
+      # A real directory occupies the expected file path; back it up instead of deleting it.
+      $needsBackup = $true
+    }
+
+    if ($needsBackup) {
+      $stamp = Get-Date -Format 'yyyyMMddHHmmss'
+      $bak = "$Dst.bak-$stamp"
+      Move-Item -LiteralPath $Dst -Destination $bak
+      Write-Output "backup $Dst -> $bak"
+    }
+  }
+
+  $tmp = "$Dst.generated-$([System.IO.Path]::GetRandomFileName())"
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  [System.IO.File]::WriteAllText($tmp, $Content, $utf8NoBom)
+  Move-Item -LiteralPath $tmp -Destination $Dst
+  Write-Output "write  $Dst"
+}
+
+function Write-AgentInstructions {
+  param([string]$Dst)
+  $preferences = [System.IO.File]::ReadAllText((Join-Path $Dir 'ai-skills\user-preferences\SKILL.md'))
+  Write-GeneratedFile $Dst $preferences
+}
+
 Link-Dir (Join-Path $Dir 'ai-skills') (Join-Path $UserHome '.ai-skills')
 
 $alwaysOnRules = @('user-preferences')
@@ -94,6 +141,10 @@ foreach ($name in $cursorSkills) {
   foreach ($d in @('.agents', '.cursor')) {
     Link-Dir (Join-Path $UserHome ".ai-skills\$name") (Join-Path $UserHome "$d\skills\$name")
   }
+}
+
+foreach ($dst in @('.codex\AGENTS.md', '.config\opencode\AGENTS.md', '.zcode\AGENTS.md', '.cursor\AGENTS.md')) {
+  Write-AgentInstructions (Join-Path $UserHome $dst)
 }
 
 Write-Output ''

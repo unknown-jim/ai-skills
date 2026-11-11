@@ -1,4 +1,6 @@
 # Credentials and machine-local state never belong in this repo. See README.
+memory/
+projects/
 *.bak-*
 *.bak
 auth.json
